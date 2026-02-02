@@ -4,9 +4,14 @@ import pandas as pd
 
 st.set_page_config(layout = 'wide', page_title = 'Gelato Calculator')
 
+st.markdown(
+    "<h1 style='text-align:center; color:#ff9f40; font-size:64px;; margin-bottom:40px;'>Gelato Calculator</h1>",
+    unsafe_allow_html=True
+)
 
-def get_total_nutrition(ingredient, label):
-    return ingredient['Name'][label]/100 * ingredient['Amount']
+
+def get_total_nutrition(ingredient, label, nutrition_df, ingredient_amount, selected_ingredients):
+    return nutrition_df.loc[selected_ingredients[ingredient]['Name'], label]/100 * ingredient_amount
 
 
 # region ALL INGREDIENTS
@@ -159,24 +164,22 @@ all_ingredients = {'Milk': milk_ingredients,
                    'Sugar': refined_sugar_ingredients,
                    'Dark Chocolate': dark_chocolate_ingredients,
                    'Stabilizer': stabilizer_ingredients,}
-selected_ingredients = []
+selected_ingredients = {}
+nutrition_df = pd.DataFrame()
 
-col_left, col_mid, col_right = st.columns([2, 3, 3])
+col_left, col_mid, col_right = st.columns([2, 3, 3], gap = 'large')
 with col_left:
     st.subheader('Ingredients')
     
     for label, items in all_ingredients.items():
         chosen_ingredient = st.selectbox(label, options = items, format_func = lambda x: x['Name'])
-        selected_ingredients.append(chosen_ingredient)
+        selected_ingredients.update({label: chosen_ingredient})
+        nutrition_df = pd.concat([nutrition_df, pd.DataFrame([chosen_ingredient])], ignore_index = True)
         
+    nutrition_df.set_index(nutrition_df.columns[0], inplace = True)
     st.subheader('Nutritional information of chosen ingredients per 100g')
-    if selected_ingredients:
-        nutrition_df = pd.DataFrame(selected_ingredients).set_index('Name')
-        st.dataframe(nutrition_df)
-    else:
-        st.info("Select ingredients to see nutrition")
+    st.dataframe(nutrition_df)
  
-    
 general_gelato_composition = {
     'Total Fat (%)': [6.0, 9.0],
     'Total Sugar (%)': [16.0, 20.0],
@@ -186,28 +189,37 @@ general_gelato_composition = {
     'Water (%)': [58.0, 65.0]
 }
 
-# INGREDIENTS USED
-milk = {'Name': country_delight_full_cream, 'Amount': 450}
-cream = {'Name': whipping_cream, 'Amount': 40}
-chocolate = {'Name': amul_dark_chocolate_sugarfree, 'Amount': 40}
-sugar = {'Name': popular_essentials_refined_sugar, 'Amount': 90}
-cornstarch = {'Name': weikfield_cornstarch, 'Amount': 2}
-
 milk_density = 1.03
 overrun = 1.2
 total_water = 0.0
 total_weight = 0.0
 total_cost = 0.0
+ingredient_amount = {}
 
-ingredients_used = [milk, cream, chocolate, sugar, cornstarch]
-for ingredient in ingredients_used:
-    total_water += (ingredient['Name']['Water (%)']/100) * ingredient['Amount']
-    if ingredient == milk:
-        total_weight += (ingredient['Amount'] * milk_density)
-    else:
-        total_weight += ingredient['Amount']
-    total_cost += ingredient['Name']['Cost/g'] * ingredient['Amount']
+with col_mid:
+    st.subheader('Ingredient Amount')
+    for label in all_ingredients.keys():
+        if label == 'Milk':
+            ingredient_amount[label] = st.slider(label, 0, 1000, 0, 5)
+        elif label == 'Sugar':
+            ingredient_amount[label] = st.slider(label, 0, 200, 0, 1)
+        elif label == 'Cream' or label == 'Dark Chocolate':
+            ingredient_amount[label] = st.slider(label, 0, 100, 0, 1)
+        else:
+            ingredient_amount[label] = st.slider(label, 0.0, 10.0, 0.0, 0.1)
+    
+    for ingredient, ingredient_info in selected_ingredients.items():
+        total_water += (ingredient_info['Water (%)']/100) * ingredient_amount[ingredient]
+        if ingredient == 'Milk':
+            total_weight += (ingredient_amount[ingredient] * milk_density)
+        else:
+            total_weight += ingredient_amount[ingredient]
+        total_cost += ingredient_info['Cost/g'] * ingredient_amount[ingredient]
 
+    st.write('Base weight - ', str(np.round(total_weight, 2)),' grams')
+    st.write('Total cost - INR', str(np.round(total_cost)))
+    st.write('Unit cost - INR', str(np.round(total_cost/total_weight, 2)))
+    
 # gelato specific information
 gelato_composition = {
     'Total Fat (%)': 0.0,
@@ -229,35 +241,36 @@ nutritional_information = {
 }
 
 for key in nutritional_information.keys():
-    for ingredient in ingredients_used:
-        nutritional_information[key] += get_total_nutrition(ingredient, key)
+    for ingredient in selected_ingredients.keys():
+        nutritional_information[key] += get_total_nutrition(ingredient, key, nutrition_df, 
+                                                            ingredient_amount[ingredient], selected_ingredients)
     nutritional_information[key] = nutritional_information[key] / total_weight * 100 
-nutritional_information_df = pd.DataFrame.from_dict(nutritional_information, orient = 'index', columns = ['Value per 100 grams'])
+nutritional_information_df = pd.DataFrame.from_dict(nutritional_information, orient = 'index', 
+                                                    columns = ['Value per 100 grams'])
 
 for key in gelato_composition.keys():
     if key == 'Stabilizers (%)':
-        gelato_composition[key] = cornstarch['Amount']
+        gelato_composition[key] = ingredient_amount['Stabilizer']
     elif key == 'Emulsifiers (%)':
         gelato_composition[key] = 0.0
-    elif key == 'Total Fat (%)':		
-        for ingredient in ingredients_used:
-            gelato_composition[key] += get_total_nutrition(ingredient, 'Total Fat (g)')
-    elif key == 'Total Sugar (%)':		
-        for ingredient in ingredients_used:
-            gelato_composition[key] += get_total_nutrition(ingredient, 'Total Sugar (g)')
+    elif key == 'Total Fat (%)': 
+        gelato_composition[key] = nutritional_information['Total Fat (g)']
+        continue    # already normalized, so skip percent normalization in this loop
+    elif key == 'Total Sugar (%)':
+        gelato_composition[key] = nutritional_information['Total Sugar (g)']
+        continue    # already normalized, so skip percent normalization in this loop
     else:
-        for ingredient in ingredients_used:
-            gelato_composition[key] += get_total_nutrition(ingredient, key)
+        for ingredient in selected_ingredients.keys():
+            gelato_composition[key] += get_total_nutrition(ingredient, key, nutrition_df, 
+                                                            ingredient_amount[ingredient], selected_ingredients)
     gelato_composition[key] = gelato_composition[key] / total_weight * 100 
 
 with col_right:
     st.subheader('Gelato Composition')
     for label, range in general_gelato_composition.items():
         st.slider(label, min_value = range[0], max_value = range[1], 
-                  value = gelato_composition[label], step = 0.01, disabled = False)
+                  value = gelato_composition[label], step = 0.01, disabled = False, 
+                  help = 'min value')
         
     st.subheader('Nutritional information per 100g')
     st.write(nutritional_information_df)
-
-gelato_composition_df = pd.DataFrame.from_dict(gelato_composition, orient = 'index', columns = ['Composition'])
-print(gelato_composition_df)
