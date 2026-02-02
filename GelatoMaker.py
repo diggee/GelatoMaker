@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 
-st.set_page_config(layout = 'wide', page_title = 'Gelato Calculator')
+st.set_page_config(layout = 'wide', page_title = 'Gelato Calculator', page_icon = ':ice_cream:')
 
 st.markdown(
     "<h1 style='text-align:center; color:#ff9f40; font-size:64px;; margin-bottom:40px;'>Gelato Calculator</h1>",
@@ -14,7 +14,7 @@ def get_total_nutrition(ingredient, label, nutrition_df, ingredient_amount, sele
     return nutrition_df.loc[selected_ingredients[ingredient]['Name'], label]/100 * ingredient_amount
 
 
-# region ALL INGREDIENTS
+# region INGREDIENT INFORMATION
 whipping_cream = {
     'Name': "D'electa Dairy Whipping Cream",
     'Energy (Kcal)': 355.55,
@@ -179,18 +179,8 @@ with col_left:
     nutrition_df.set_index(nutrition_df.columns[0], inplace = True)
     st.subheader('Nutritional information of chosen ingredients per 100g')
     st.dataframe(nutrition_df)
- 
-general_gelato_composition = {
-    'Total Fat (%)': [6.0, 9.0],
-    'Total Sugar (%)': [16.0, 20.0],
-    'MSNF (%)': [8.0, 11.0],
-    'Stabilizers (%)': [0.25, 0.4],
-    'Emulsifiers (%)': [0.0, 0.4],
-    'Water (%)': [58.0, 65.0]
-}
 
 milk_density = 1.03
-overrun = 1.2
 total_water = 0.0
 total_weight = 0.0
 total_cost = 0.0
@@ -220,7 +210,16 @@ with col_mid:
     st.write('Total cost - INR', str(np.round(total_cost)))
     st.write('Unit cost - INR', str(np.round(total_cost/total_weight, 2)))
     
-# gelato specific information
+# general gelato composition 
+general_gelato_composition = {
+    'Total Fat (%)': [6.0, 9.0],
+    'Total Sugar (%)': [16.0, 20.0],
+    'MSNF (%)': [8.0, 11.0],
+    'Stabilizers (%)': [0.25, 0.4],
+    'Emulsifiers (%)': [0.0, 0.4],
+    'Water (%)': [58.0, 65.0]
+}
+# specific gelato composition
 gelato_composition = {
     'Total Fat (%)': 0.0,
     'Total Sugar (%)': 0.0,
@@ -229,7 +228,7 @@ gelato_composition = {
     'Emulsifiers (%)': 0.0,
     'Water (%)': 0.0
 }
-# generic nutritional information
+# nutritional information
 nutritional_information = {
     'Energy (Kcal)': 0.0,
     'Protein (g)': 0.0,
