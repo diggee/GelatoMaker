@@ -71,7 +71,7 @@ def get_gelato_composition_information(gelato_composition: dict):
         if key == 'Stabilizers (%)':
             gelato_composition[key] = ingredient_amount['Stabilizer']
         elif key == 'Emulsifiers (%)':
-            gelato_composition[key] = 0.0
+            gelato_composition[key] = ingredient_amount['Emulsifier']
         elif key == 'Total Fat (%)': 
             gelato_composition[key] = nutritional_information['Total Fat (g)']
             continue    # already normalized, so skip percent normalization in this loop
@@ -85,157 +85,32 @@ def get_gelato_composition_information(gelato_composition: dict):
         gelato_composition[key] = gelato_composition[key] / total_weight * 100
     return gelato_composition
 
-# region INGREDIENT INFORMATION
-whipping_cream = {
-    'Name': "D'electa Dairy Whipping Cream",
-    'Energy (Kcal)': 355.55,
-    'Protein (g)': 3.17,
-    'Carbohydrates (g)': 5.95,
-    'Total Sugar (g)': 3.06,
-    'Total Fat (g)': 35,
-    'Cholestrol (mg)': 34.88,
-    'Sodium (mg)': 1725.45,
-    'Calcium (mg)': 0.0,
-    'MSNF (%)': 9.12,
-    'Water (%)': 56.88,
-    'Cost/g': 0.58
-}
-amul_taaza = {
-    'Name': 'Amul Taaza',
-    'Energy (Kcal)': 62.0,
-    'Protein (g)': 3.0,
-    'Carbohydrates (g)': 4.7,
-    'Total Sugar (g)': 4.7,
-    'Total Fat (g)': 3.5,
-    'Cholestrol (mg)': 9.0,
-    'Sodium (mg)': 40.0,
-    'Calcium (mg)': 110.0,
-    'MSNF (%)': 8.5,
-    'Water (%)': 88.5,
-    'Cost/g': 0.058
-}
-amul_gold = {
-    'Name': 'Amul Gold',
-    'Energy (Kcal)': 91.0,
-    'Protein (g)': 3.2,
-    'Carbohydrates (g)': 5.0,
-    'Total Sugar (g)': 5.0,
-    'Total Fat (g)': 6.5,
-    'Cholestrol (mg)': 17.0,
-    'Sodium (mg)': 42.0,
-    'Calcium (mg)': 120.0,
-    'MSNF (%)': 9.0,
-    'Water (%)': 84.5,
-    'Cost/g': 0.07
-}
-country_delight = {
-    'Name': 'Country Delight',
-    'Energy (Kcal)': 63.0,
-    'Protein (g)': 3.2,
-    'Carbohydrates (g)': 4.4,
-    'Total Sugar (g)': 4.0,
-    'Total Fat (g)': 3.5,
-    'Cholestrol (mg)': 7.0,
-    'Sodium (mg)': 40.0,
-    'Calcium (mg)': 150.0,
-    'MSNF (%)': 8.5,
-    'Water (%)': 88,
-    'Cost/g': 0.098
-}
-country_delight_full_cream = {
-    'Name': 'Country Delight Full Cream',
-    'Energy (Kcal)': 86.0,
-    'Protein (g)': 3.2,
-    'Carbohydrates (g)': 4.9,
-    'Total Sugar (g)': 4.9,
-    'Total Fat (g)': 6.0,
-    'Cholestrol (mg)': 13.0,
-    'Sodium (mg)': 45.0,
-    'Calcium (mg)': 150.0,
-    'MSNF (%)': 9.0,
-    'Water (%)': 85,
-    'Cost/g': 0.12
-}
-skimmed_milk_powder = {
-    'Name': 'NAKPRO Skimmed Milk Powder',
-    'Energy (Kcal)': 367.0,
-    'Protein (g)': 35.0,
-    'Carbohydrates (g)': 54.0,
-    'Total Sugar (g)': 54.0,
-    'Total Fat (g)': 1.2,
-    'Cholestrol (mg)': 9.0,
-    'Sodium (mg)': 40.0,
-    'Calcium (mg)': 110.0,
-    'MSNF (%)': 95.0,
-    'Water (%)': 3.0,
-    'Cost/g': 0.51
-}
-amul_dark_chocolate_sugarfree = {
-    'Name': 'Amul Dark Chocolate Sugar Free',
-    'Energy (Kcal)': 558.0,
-    'Protein (g)': 6.0,
-    'Carbohydrates (g)': 56.7,
-    'Total Sugar (g)': 0.5,
-    'Total Fat (g)': 33.8,
-    'Cholestrol (mg)': 0.0,
-    'Sodium (mg)': 38.0,
-    'Calcium (mg)': 0.0,
-    'MSNF (%)': 0.0,
-    'Water (%)': 0.0,
-    'Cost/g': 1.2
-}
-popular_essentials_refined_sugar = {
-    'Name': 'Popular Essentials Refined Sugar',
-    'Energy (Kcal)': 387.0,
-    'Protein (g)': 0.0,
-    'Carbohydrates (g)': 100.0,
-    'Total Sugar (g)': 100.0,
-    'Total Fat (g)': 0.0,
-    'Cholestrol (mg)': 0.0,
-    'Sodium (mg)': 0.0,
-    'Calcium (mg)': 0.0,
-    'MSNF (%)': 0.0,
-    'Water (%)': 0.0,
-    'Cost/g': 0.073
-}
-weikfield_cornstarch = {
-    'Name': 'Weikfield Cornstarch',
-    'Energy (Kcal)': 350.0,
-    'Protein (g)': 0.0,
-    'Carbohydrates (g)': 87.2,
-    'Total Sugar (g)': 0.0,
-    'Total Fat (g)': 0.0,
-    'Cholestrol (mg)': 0.0,
-    'Sodium (mg)': 14.7,
-    'Calcium (mg)': 0.0,
-    'MSNF (%)': 0.0,
-    'Water (%)': 0.0,
-    'Cost/g': 0.33
-}
-# endregion
+all_ingredients_df = pd.read_excel('ingredients.xlsx', index_col = 0)
+ingredient_types = all_ingredients_df.index.unique()
 
-milk_ingredients = [amul_taaza, amul_gold, country_delight, country_delight_full_cream]
-whipping_cream_ingredients = [whipping_cream]
-refined_sugar_ingredients = [popular_essentials_refined_sugar]
-skimmed_milk_powder_ingredients = [skimmed_milk_powder]
-dark_chocolate_ingredients = [amul_dark_chocolate_sugarfree]
-stabilizer_ingredients = [weikfield_cornstarch]
-emulsifiers_ingredients = []
-all_ingredients = {'Milk': milk_ingredients,
-                   'Cream': whipping_cream_ingredients,
-                   'Sugar': refined_sugar_ingredients,
-                   'Skimmed Milk Powder': skimmed_milk_powder_ingredients,
-                   'Dark Chocolate': dark_chocolate_ingredients,
-                   'Stabilizer': stabilizer_ingredients,}
 selected_ingredients = {}
+cols = st.columns(len(ingredient_types))
+for i, ingredient_type in enumerate(ingredient_types):
+    with cols[i]:
+        chosen_ingredient = st.selectbox(ingredient_type, all_ingredients_df.loc[all_ingredients_df.index == ingredient_type, 'Name'])
+        selected_ingredients.update({ingredient_type: chosen_ingredient})
+
+all_ingredients_df.reset_index(inplace=True)
+all_ingredients_df.drop(all_ingredients_df.columns[0], axis = 1, inplace = True)
+all_ingredients_df.set_index(all_ingredients_df.columns[0], inplace = True)
+selected_ingredients_df = pd.DataFrame(columns = all_ingredients_df.columns)
+
+for key, value in selected_ingredients.items():
+    selected_ingredients_df.loc[value, :] = all_ingredients_df.loc[value, :]
 nutrition_df = pd.DataFrame()
+st.write(selected_ingredients_df)
 
 col_left, col_mid, col_right = st.columns([2, 3, 3], gap = 'large')
 with col_left:
     st.subheader('Ingredients')
     
     for label, items in all_ingredients.items():
-        chosen_ingredient = st.selectbox(label, options = items, format_func = lambda x: x['Name'])
+        chosen_ingredient = st.selectbox(label, options = items,)
         selected_ingredients.update({label: chosen_ingredient})
         nutrition_df = pd.concat([nutrition_df, pd.DataFrame([chosen_ingredient])], ignore_index = True)
         
@@ -257,7 +132,7 @@ with col_mid:
             ingredient_amount[label] = st.slider(label, 0, 1000, 500, 5)
         elif label == 'Cream' or label == 'Sugar':
             ingredient_amount[label] = st.slider(label, 0, 200, 50, 1)
-        elif label == 'Dark Chocolate' or label == 'Skimmed Milk Powder':
+        elif label == 'Chocolate' or label == 'Skimmed Milk Powder' or label == 'Dextrose':
             ingredient_amount[label] = st.slider(label, 0, 100, 50, 1)
         else:
             ingredient_amount[label] = st.slider(label, 0.0, 10.0, 3.0, 0.1)
