@@ -9,6 +9,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+def get_total_ingredient_information(selected_ingredients_df):
+    df = selected_ingredients_df.copy()
+    for col in df.columns[1:]:
+        df.loc[:, col] *= selected_ingredients_df.loc[:, 'Amount (g)']
+    for col in df.columns:
+        df.loc['Total', col] = np.sum(df[col])
+    return df
+
 def get_gelato_cost_and_weight(total_cost: float, 
                                total_water: float, 
                                total_weight: float, 
@@ -89,101 +97,97 @@ all_ingredients_df = pd.read_excel('ingredients.xlsx', index_col = 0)
 ingredient_types = all_ingredients_df.index.unique()
 
 selected_ingredients = {}
+ingredient_amounts = {}
+ingredient_max_amounts = []
+# for ingredient_type in ingredient_types:
+    # ingredient_max_amounts[ingredient_type]
 cols = st.columns(len(ingredient_types))
 for i, ingredient_type in enumerate(ingredient_types):
     with cols[i]:
         chosen_ingredient = st.selectbox(ingredient_type, all_ingredients_df.loc[all_ingredients_df.index == ingredient_type, 'Name'])
         selected_ingredients.update({ingredient_type: chosen_ingredient})
-
+        ingredient_amount = st.slider('Amount (g)', 0, 100, 1, key = chosen_ingredient)
+        ingredient_amounts.update({ingredient_type: ingredient_amount})
+        
 all_ingredients_df.reset_index(inplace=True)
 all_ingredients_df.drop(all_ingredients_df.columns[0], axis = 1, inplace = True)
 all_ingredients_df.set_index(all_ingredients_df.columns[0], inplace = True)
 selected_ingredients_df = pd.DataFrame(columns = all_ingredients_df.columns)
 
 for key, value in selected_ingredients.items():
-    selected_ingredients_df.loc[value, :] = all_ingredients_df.loc[value, :]
-nutrition_df = pd.DataFrame()
-st.write(selected_ingredients_df)
+    selected_ingredients_df.loc[value, :] = all_ingredients_df.loc[value, :]/100.0
+selected_ingredients_df.loc[:, 'Amount (g)'] = ingredient_amounts.values()
+col = selected_ingredients_df.pop("Amount (g)")
+selected_ingredients_df.insert(0, "Amount (g)", col)
 
-col_left, col_mid, col_right = st.columns([2, 3, 3], gap = 'large')
-with col_left:
-    st.subheader('Ingredients')
-    
-    for label, items in all_ingredients.items():
-        chosen_ingredient = st.selectbox(label, options = items,)
-        selected_ingredients.update({label: chosen_ingredient})
-        nutrition_df = pd.concat([nutrition_df, pd.DataFrame([chosen_ingredient])], ignore_index = True)
-        
-    nutrition_df.set_index(nutrition_df.columns[0], inplace = True)
-    st.subheader('Nutritional information of chosen ingredients per 100g')
-    st.dataframe(nutrition_df)
+gelato_df = get_total_ingredient_information(selected_ingredients_df)
+st.dataframe(gelato_df) 
 
 milk_density = 1.03
 total_water = 0.0
 total_weight = 0.0
 total_cost = 0.0
-ingredient_amount = {}
 
-with col_mid:
-    st.subheader('Ingredient Amount')
-    st.write('_All amounts in grams, except milk (ml))_')
-    for label in all_ingredients.keys():
-        if label == 'Milk':
-            ingredient_amount[label] = st.slider(label, 0, 1000, 500, 5)
-        elif label == 'Cream' or label == 'Sugar':
-            ingredient_amount[label] = st.slider(label, 0, 200, 50, 1)
-        elif label == 'Chocolate' or label == 'Skimmed Milk Powder' or label == 'Dextrose':
-            ingredient_amount[label] = st.slider(label, 0, 100, 50, 1)
-        else:
-            ingredient_amount[label] = st.slider(label, 0.0, 10.0, 3.0, 0.1)
+# with col_mid:
+#     st.subheader('Ingredient Amount')
+#     st.write('_All amounts in grams, except milk (ml))_')
+#     for label in all_ingredients.keys():
+#         if label == 'Milk':
+#             ingredient_amount[label] = st.slider(label, 0, 1000, 500, 5)
+#         elif label == 'Cream' or label == 'Sugar':
+#             ingredient_amount[label] = st.slider(label, 0, 200, 50, 1)
+#         elif label == 'Chocolate' or label == 'Skimmed Milk Powder' or label == 'Dextrose':
+#             ingredient_amount[label] = st.slider(label, 0, 100, 50, 1)
+#         else:
+#             ingredient_amount[label] = st.slider(label, 0.0, 10.0, 3.0, 0.1)
     
-    total_cost, total_water, total_weight = get_gelato_cost_and_weight(total_cost, total_water, total_weight, 
-                                                                       selected_ingredients, ingredient_amount)
+#     total_cost, total_water, total_weight = get_gelato_cost_and_weight(total_cost, total_water, total_weight, 
+#                                                                        selected_ingredients, ingredient_amount)
     
-    st.write(f'**Base weight - {np.round(total_weight, 2)} grams**')
-    st.write(f'**Total cost - INR {np.round(total_cost)}**')
-    st.write(f'**Unit cost - INR {np.round(total_cost/total_weight, 2)}**')
+#     st.write(f'**Base weight - {np.round(total_weight, 2)} grams**')
+#     st.write(f'**Total cost - INR {np.round(total_cost)}**')
+#     st.write(f'**Unit cost - INR {np.round(total_cost/total_weight, 2)}**')
     
-# general gelato composition 
-general_gelato_composition = {
-    'Total Fat (%)': [6.0, 9.0],
-    'Total Sugar (%)': [16.0, 20.0],
-    'MSNF (%)': [8.0, 12.0],
-    'Stabilizers (%)': [0.25, 0.4],
-    'Emulsifiers (%)': [0.0, 0.4],
-    'Water (%)': [58.0, 65.0]
-}
-# specific gelato composition
-gelato_composition = {
-    'Total Fat (%)': 0.0,
-    'Total Sugar (%)': 0.0,
-    'MSNF (%)': 0.0,
-    'Stabilizers (%)': 0.0,
-    'Emulsifiers (%)': 0.0,
-    'Water (%)': 0.0
-}
-# nutritional information
-nutritional_information = {
-    'Energy (Kcal)': 0.0,
-    'Protein (g)': 0.0,
-    'Carbohydrates (g)': 0.0,
-    'Total Sugar (g)': 0.0,
-    'Total Fat (g)': 0.0,
-    'Cholestrol (mg)': 0.0,
-    'Calcium (mg)': 0.0,
-}
+# # general gelato composition 
+# general_gelato_composition = {
+#     'Total Fat (%)': [6.0, 9.0],
+#     'Total Sugar (%)': [16.0, 20.0],
+#     'MSNF (%)': [8.0, 12.0],
+#     'Stabilizers (%)': [0.25, 0.4],
+#     'Emulsifiers (%)': [0.0, 0.4],
+#     'Water (%)': [58.0, 65.0]
+# }
+# # specific gelato composition
+# gelato_composition = {
+#     'Total Fat (%)': 0.0,
+#     'Total Sugar (%)': 0.0,
+#     'MSNF (%)': 0.0,
+#     'Stabilizers (%)': 0.0,
+#     'Emulsifiers (%)': 0.0,
+#     'Water (%)': 0.0
+# }
+# # nutritional information
+# nutritional_information = {
+#     'Energy (Kcal)': 0.0,
+#     'Protein (g)': 0.0,
+#     'Carbohydrates (g)': 0.0,
+#     'Total Sugar (g)': 0.0,
+#     'Total Fat (g)': 0.0,
+#     'Cholestrol (mg)': 0.0,
+#     'Calcium (mg)': 0.0,
+# }
 
-nutritional_information_df = get_gelato_nutritional_information(nutritional_information)
-gelato_composition = get_gelato_composition_information(gelato_composition) 
+# nutritional_information_df = get_gelato_nutritional_information(nutritional_information)
+# gelato_composition = get_gelato_composition_information(gelato_composition) 
 
-with col_right:
-    st.subheader('Gelato Composition')
-    st.write('_Calculations are done considering all ingredients_')
-    for label, range in general_gelato_composition.items():
-        st.slider(label, min_value = range[0], max_value = range[1], 
-                  value = gelato_composition[label], step = 0.01, disabled = False, 
-                  help = f'min value = {range[0]}, max value = {range[1]}')
+# with col_right:
+#     st.subheader('Gelato Composition')
+#     st.write('_Calculations are done considering all ingredients_')
+#     for label, range in general_gelato_composition.items():
+#         st.slider(label, min_value = range[0], max_value = range[1], 
+#                   value = gelato_composition[label], step = 0.01, disabled = False, 
+#                   help = f'min value = {range[0]}, max value = {range[1]}')
         
-    st.subheader('Nutritional information per 100g')
-    st.write('_Estimate; all ingredients considered_')
-    st.write(nutritional_information_df)
+#     st.subheader('Nutritional information per 100g')
+#     st.write('_Estimate; all ingredients considered_')
+#     st.write(nutritional_information_df)
