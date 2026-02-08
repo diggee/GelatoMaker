@@ -52,6 +52,8 @@ if __name__ == '__main__':
 
     # make a dataframe of the nutritional information due to the actual ingredients
     gelato_df = get_total_ingredient_information(selected_ingredients_df)
+    # remove chocolate from calculation as it is an add-in and not a core base ingredient
+    gelato_df.loc['Total', :] -= gelato_df.loc[selected_ingredients['Chocolate'], :]
     st.dataframe(gelato_df, use_container_width = True) 
 
     total_water = gelato_df.loc['Total', 'Water (g)']
@@ -62,8 +64,8 @@ if __name__ == '__main__':
     with col1:
         st.subheader('Gelato Composition')
         # min and max limits for general gelato composition
-        min_limits = [4.0, 14.0, 8.0, 0.180, 0.140, 58, 0.2, 0.15]
-        max_limits = [8.0, 22.0, 11.0, 0.260, 0.180, 62, 0.4, 0.25]
+        min_limits = [4.0, 18.0, 8.0, 0.22, 0.14, 58, 0.12, 0.12]
+        max_limits = [8.0, 22.0, 11.0, 0.26, 0.18, 62, 0.2, 0.2]
         actual_values = [gelato_df.loc['Total', 'Total Fat (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'Total Sugar (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'MSNF (g)']/total_weight * 100,
@@ -79,6 +81,8 @@ if __name__ == '__main__':
         
     with col2:
         st.subheader('Nutritional Value per 100 grams')
+        # add chocolate back in the calculation (if removed) to calculate nutritional information
+        gelato_df.loc['Total', :] += gelato_df.loc[selected_ingredients['Chocolate'], :]
         cols = ['Energy (Kcal)', 'Total Fat (g)', 'Carbohydrates (g)', 'Total Sugar (g)',
                 'Protein (g)', 'Cholestrol (mg)', 'Calcium (mg)', 'Sodium (mg)']
         gelato_composition_df = gelato_df.loc['Total', cols].to_frame(name='Value')
