@@ -13,7 +13,7 @@ def get_total_ingredient_information(selected_ingredients_df):
     df = selected_ingredients_df.copy() # copy neded so that information in the original df is not modified
     for col in df.columns[1:]:
         if col == 'PAC' or col == 'POD': # since PAC and POD calculations are done from sugar amount
-            df.loc[:, col] = df.loc[:, col] * selected_ingredients_df.loc[:, 'Total Sugar (g)'] * selected_ingredients_df.loc[:, 'Amount (g)']
+            df.loc[:, col] *= selected_ingredients_df.loc[:, 'Total Sugar (g)'] * selected_ingredients_df.loc[:, 'Amount (g)']
         else:
             df.loc[:, col] *= selected_ingredients_df.loc[:, 'Amount (g)']
     for col in df.columns:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     selected_ingredients = {}
     ingredient_amounts = {}
-    ingredient_max_amounts = [200, 1000, 100, 100, 200, 10, 10, 100]
+    ingredient_max_amounts = [200, 1000, 100, 100, 200, 10, 10, 100, 100, 100]
     cols = st.columns(len(ingredient_types))
     for i, ingredient_type in enumerate(ingredient_types):
         with cols[i]:
@@ -64,8 +64,8 @@ if __name__ == '__main__':
     with col1:
         st.subheader('Gelato Composition')
         # min and max limits for general gelato composition
-        min_limits = [4.0, 18.0, 8.0, 0.22, 0.14, 58, 0.12, 0.12]
-        max_limits = [8.0, 22.0, 11.0, 0.26, 0.18, 62, 0.2, 0.2]
+        min_limits = [4.0, 18.0, 9.0, 0.22, 0.14, 58, 0.12, 0.12]
+        max_limits = [9.0, 22.0, 11.0, 0.26, 0.18, 66, 0.2, 0.2]
         actual_values = [gelato_df.loc['Total', 'Total Fat (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'Total Sugar (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'MSNF (g)']/total_weight * 100,
