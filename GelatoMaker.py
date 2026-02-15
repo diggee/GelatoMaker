@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     selected_ingredients = {}
     ingredient_amounts = {}
-    ingredient_max_amounts = [200, 1000, 100, 100, 200, 10, 10, 100, 100, 100]
+    ingredient_max_amounts = [200, 1000, 100, 200, 200, 10, 10, 100, 100]
     cols = st.columns(len(ingredient_types))
     for i, ingredient_type in enumerate(ingredient_types):
         with cols[i]:
@@ -56,39 +56,43 @@ if __name__ == '__main__':
     gelato_df.loc['Total', :] -= gelato_df.loc[selected_ingredients['Chocolate'], :]
     st.dataframe(gelato_df, use_container_width = True) 
 
-    total_water = gelato_df.loc['Total', 'Water (g)']
     total_weight = gelato_df.loc['Total', 'Amount (g)']
-    total_cost = gelato_df.loc['Total', 'Cost']
+    total_lactose = 0.0
+    lactose_ingredients = ['Cream', 'Milk', 'Skimmed Milk Powder']
+    for ingredient in lactose_ingredients:
+        total_lactose += gelato_df.loc[selected_ingredients[ingredient], 'Total Sugar (g)']
 
     col1, col2, col3 = st.columns(3, gap = 'large')
     with col1:
         st.subheader('Gelato Composition')
         # min and max limits for general gelato composition
-        min_limits = [4.0, 18.0, 9.0, 0.22, 0.14, 58, 0.12, 0.12]
-        max_limits = [9.0, 22.0, 11.0, 0.26, 0.18, 66, 0.2, 0.2]
+        min_limits = [4.0, 18.0, 5.0, 9.0, 0.22, 0.14, 58, 0.12, 0.12]
+        max_limits = [9.0, 22.0, 7.0, 11.0, 0.26, 0.18, 66, 0.2, 0.2]
         actual_values = [gelato_df.loc['Total', 'Total Fat (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'Total Sugar (g)']/total_weight * 100,
+                              total_lactose/total_weight * 100,
                               gelato_df.loc['Total', 'MSNF (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'PAC']/ total_weight,
                               gelato_df.loc['Total', 'POD']/total_weight,
                               gelato_df.loc['Total', 'Water (g)']/total_weight * 100,
                               gelato_df.loc[selected_ingredients['Emulsifier'], 'Amount (g)']/total_weight * 100,
                               gelato_df.loc[selected_ingredients['Stabilizer'], 'Amount (g)']/total_weight * 100]
-        labels = ["Total Fat (%)", "Total Sugar (%)", "MSNF (%)", "PAC Index", "POD Index", "Water (%)", 
+        labels = ["Total Fat (%)", "Total Sugar (%)", "Total Lactose (%)", "MSNF (%)", "PAC Index", "POD Index", "Water (%)", 
                   'Emulsifier (%)', 'Stabilizer (%)']
         gelato_limits_df = pd.DataFrame({'Min': min_limits, 'Max': max_limits, 'Value': actual_values}, index = labels)
         st.dataframe(gelato_limits_df, use_container_width = True)
         
     with col2:
         st.subheader('Nutritional Value per 100 grams')
-        # add chocolate back in the calculation (if removed) to calculate nutritional information
+        # add chocolate back in the calculation (if removed) to calculate nutritional information and total cost
         gelato_df.loc['Total', :] += gelato_df.loc[selected_ingredients['Chocolate'], :]
+        total_weight = gelato_df.loc['Total', 'Amount (g)']
         cols = ['Energy (Kcal)', 'Total Fat (g)', 'Carbohydrates (g)', 'Total Sugar (g)',
                 'Protein (g)', 'Cholestrol (mg)', 'Calcium (mg)', 'Sodium (mg)']
         gelato_composition_df = gelato_df.loc['Total', cols].to_frame(name='Value')
         gelato_composition_df['Value'] = gelato_composition_df['Value']/total_weight * 100
-        st.dataframe(gelato_composition_df, use_container_width = True)
-        
+        st.dataframe(gelato_composition_df, use_container_width = True)  
+    total_cost = gelato_df.loc['Total', 'Cost']
     with col3:
-        st.subheader(f'**Total cost - INR {np.round(total_cost)}**')
-        st.subheader(f'**Unit cost - INR {np.round(total_cost/total_weight, 2)}**')
+        st.subheader(f'**Total cost - INR {np.round(total_cost, 2)}**')
+        st.subheader(f'**Unit cost - INR {np.round(total_cost/total_weight, 3)}**')
