@@ -27,15 +27,25 @@ if __name__ == '__main__':
 
     selected_ingredients = {}
     ingredient_amounts = {}
-    ingredient_max_amounts = [200, 1000, 100, 200, 200, 10, 10, 100, 100]
+    ingredient_max_amounts = [200, 1000, 100, 200, 200, 5.0, 5.0, 100, 100]
     cols = st.columns(len(ingredient_types))
     for i, ingredient_type in enumerate(ingredient_types):
         with cols[i]:
             # select which particular ingredient is selected for every ingredient type
             chosen_ingredient = st.selectbox(ingredient_type, all_ingredients_df.loc[all_ingredients_df.index == ingredient_type, 'Name'])
             selected_ingredients.update({ingredient_type: chosen_ingredient})
+            if ingredient_type == 'Stabilizer' or ingredient_type == 'Emulsifier':
+                step = 0.1
+                min_value = 0.0
+                value = 1.0
+            else:
+                step = 1
+                min_value = 0
+                value = 1
             # change ingredient amounts
-            ingredient_amount = st.slider('Amount (g)', 0, ingredient_max_amounts[i], 1, key = chosen_ingredient)
+            ingredient_amount = st.slider('Amount (g)', min_value = min_value, 
+                                          max_value = ingredient_max_amounts[i], 
+                                          value = value, step = step, key = chosen_ingredient)
             ingredient_amounts.update({ingredient_type: ingredient_amount})
             
     all_ingredients_df.reset_index(inplace=True)
@@ -53,7 +63,7 @@ if __name__ == '__main__':
     # make a dataframe of the nutritional information due to the actual ingredients
     gelato_df = get_total_ingredient_information(selected_ingredients_df)
     # remove chocolate from calculation as it is an add-in and not a core base ingredient
-    gelato_df.loc['Total', :] -= gelato_df.loc[selected_ingredients['Chocolate'], :]
+    # gelato_df.loc['Total', :] -= gelato_df.loc[selected_ingredients['Chocolate'], :]
     st.dataframe(gelato_df, use_container_width = True) 
 
     total_weight = gelato_df.loc['Total', 'Amount (g)']
@@ -66,8 +76,8 @@ if __name__ == '__main__':
     with col1:
         st.subheader('Gelato Composition')
         # min and max limits for general gelato composition
-        min_limits = [4.0, 18.0, 5.0, 9.0, 0.22, 0.14, 58, 0.12, 0.12]
-        max_limits = [9.0, 22.0, 7.0, 11.0, 0.26, 0.18, 66, 0.2, 0.2]
+        min_limits = [4.0, 22.0, 5.0, 9.0, 0.24, 0.15, 58, 0.1, 0.2]
+        max_limits = [9.0, 28.0, 7.0, 11.0, 0.28, 0.20, 66, 0.3, 0.35]
         actual_values = [gelato_df.loc['Total', 'Total Fat (g)']/total_weight * 100,
                               gelato_df.loc['Total', 'Total Sugar (g)']/total_weight * 100,
                               total_lactose/total_weight * 100,
@@ -76,16 +86,16 @@ if __name__ == '__main__':
                               gelato_df.loc['Total', 'POD']/total_weight,
                               gelato_df.loc['Total', 'Water (g)']/total_weight * 100,
                               gelato_df.loc[selected_ingredients['Emulsifier'], 'Amount (g)']/total_weight * 100,
-                              gelato_df.loc[selected_ingredients['Stabilizer'], 'Amount (g)']/total_weight * 100]
+                              gelato_df.loc[selected_ingredients['Stabilizer'], 'Amount (g)']/gelato_df.loc['Total', 'Water (g)'] * 100]
         labels = ["Total Fat (%)", "Total Sugar (%)", "Total Lactose (%)", "MSNF (%)", "PAC Index", "POD Index", "Water (%)", 
-                  'Emulsifier (%)', 'Stabilizer (%)']
+                  'Emulsifier (%)', 'Stabilizer/ Water (%)']
         gelato_limits_df = pd.DataFrame({'Min': min_limits, 'Max': max_limits, 'Value': actual_values}, index = labels)
         st.dataframe(gelato_limits_df, use_container_width = True)
         
     with col2:
         st.subheader('Nutritional Value per 100 grams')
         # add chocolate back in the calculation (if removed) to calculate nutritional information and total cost
-        gelato_df.loc['Total', :] += gelato_df.loc[selected_ingredients['Chocolate'], :]
+        # gelato_df.loc['Total', :] += gelato_df.loc[selected_ingredients['Chocolate'], :]
         total_weight = gelato_df.loc['Total', 'Amount (g)']
         cols = ['Energy (Kcal)', 'Total Fat (g)', 'Carbohydrates (g)', 'Total Sugar (g)',
                 'Protein (g)', 'Cholestrol (mg)', 'Calcium (mg)', 'Sodium (mg)']
