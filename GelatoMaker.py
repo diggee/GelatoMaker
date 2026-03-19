@@ -21,13 +21,14 @@ def get_total_ingredient_information(selected_ingredients_df):
     return df # return the modified copied dataframe
 
 if __name__ == '__main__':
-    # read in the base excel sheet that has nutritional information of all the ingredients
+    # read in the base excel sheet that has the relevant information of all the ingredients
+    # the information in the excel sheet is for 100 grams of the ingrdient
     all_ingredients_df = pd.read_excel('ingredients.xlsx', index_col = 0)
     ingredient_types = all_ingredients_df.index.unique()
 
     selected_ingredients = {}
     ingredient_amounts = {}
-    ingredient_max_amounts = [200, 1000, 100, 200, 200, 5.0, 5.0, 100, 100]
+    ingredient_max_amounts = [200, 1000, 100, 200, 200, 5.0, 5.0, 100, 100, 300]
     cols = st.columns(len(ingredient_types))
     for i, ingredient_type in enumerate(ingredient_types):
         with cols[i]:
