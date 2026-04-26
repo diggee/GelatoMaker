@@ -65,7 +65,7 @@ if __name__ == '__main__':
     gelato_df = get_total_ingredient_information(selected_ingredients_df)
     # remove chocolate from calculation as it is an add-in and not a core base ingredient
     # gelato_df.loc['Total', :] -= gelato_df.loc[selected_ingredients['Chocolate'], :]
-    st.dataframe(gelato_df, use_container_width = True) 
+    st.dataframe(gelato_df, width = 'stretch') 
 
     total_weight = gelato_df.loc['Total', 'Amount (g)']
     total_lactose = 0.0
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         labels = ["Total Fat (%)", "Total Sugar (%)", "Total Lactose (%)", "MSNF (%)", "PAC Index", "POD Index", "Water (%)", 
                   'Emulsifier (%)', 'Stabilizer/ Water (%)']
         gelato_limits_df = pd.DataFrame({'Min': min_limits, 'Max': max_limits, 'Value': actual_values}, index = labels)
-        st.dataframe(gelato_limits_df, use_container_width = True)
+        st.dataframe(gelato_limits_df, width = 'stretch')
         
     with col2:
         st.subheader('Nutritional Value per 100 grams')
@@ -102,7 +102,7 @@ if __name__ == '__main__':
                 'Protein (g)', 'Cholestrol (mg)', 'Calcium (mg)', 'Sodium (mg)']
         gelato_composition_df = gelato_df.loc['Total', cols].to_frame(name='Value')
         gelato_composition_df['Value'] = gelato_composition_df['Value']/total_weight * 100
-        st.dataframe(gelato_composition_df, use_container_width = True)  
+        st.dataframe(gelato_composition_df, width = 'stretch')  
     total_cost = gelato_df.loc['Total', 'Cost']
     with col3:
         st.subheader(f'**Total cost - INR {np.round(total_cost, 2)}**')
